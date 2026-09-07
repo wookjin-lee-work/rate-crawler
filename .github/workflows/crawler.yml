@@ -1,0 +1,37 @@
+name: Competition Rate Auto Crawler
+
+on:
+  schedule:
+    # UTC 기준 (한국시간 KST = UTC + 9)
+    # 한국시간 기준 매시 3, 13, 23, 33, 43, 53분 실행 (UTC 기준 매시 10분 간격)
+    - cron: '3,13,23,33,43,53 * * * *'
+  workflow_dispatch: # 수동 실행 버튼 생성
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 코드 가져오기
+      uses: actions/checkout@v3
+
+    - name: 파이썬 3.10 설치
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 패키지 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 크롤러 실행
+      run: python rate_tracker.py
+
+    - name: 변경된 CSV 파일 자동 커밋 및 푸시
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add competition_rate_log.csv
+        git commit -m "Auto update competition rate log [$(date +'%Y-%m-%d %H:%M:%S')]" || exit 0
+        git push
